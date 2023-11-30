@@ -1,0 +1,118 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
+
+#define EARTH_RADIUS 6371
+
+// Node structure for binary search tree
+struct Node {
+    char name[50];
+    float distance;
+    struct Node *left, *right;
+};
+
+// Create a new node for the binary search tree
+struct Node* createNode(char name[], float distance) {
+    struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
+    strcpy(newNode->name, name);
+    newNode->distance = distance;
+    newNode->left = newNode->right = NULL;
+    return newNode;
+}
+
+// Function to calculate Haversine distance between two geographical points
+float haversine(float lat1, float lon1, float lat2, float lon2) {
+    float dlat = (lat2 - lat1) * M_PI / 180.0;
+    float dlon = (lon2 - lon1) * M_PI / 180.0;
+    float a = pow(sin(dlat / 2), 2) + cos(lat1 * M_PI / 180.0) * cos(lat2 * M_PI / 180.0) * pow(sin(dlon / 2), 2);
+    float c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    return EARTH_RADIUS * c;
+}
+
+// Insert a node into the binary search tree
+struct Node* insertNode(struct Node* root, char name[], float distance) {
+    if (root == NULL)
+        return createNode(name, distance);
+
+    if (distance < root->distance)
+        root->left = insertNode(root->left, name, distance);
+    else
+        root->right = insertNode(root->right, name, distance);
+
+    return root;
+}
+
+// Depth-first search (DFS)
+void dfs(struct Node* node) {
+    if (node != NULL) {
+        printf("%s\n", node->name);
+        dfs(node->left);
+        dfs(node->right);
+    }
+}
+
+// Breadth-first search (BFS) - Iterative approach using Queue
+void bfs(struct Node* root) {
+    struct Node* queue[100];
+    int front = 0, rear = 0;
+    if (root != NULL) {
+        queue[rear++] = root;
+
+        while (front < rear) {
+            struct Node* current = queue[front++];
+            printf("%s\n", current->name);
+
+            if (current->left != NULL)
+                queue[rear++] = current->left;
+            if (current->right != NULL)
+                queue[rear++] = current->right;
+        }
+    }
+}
+
+// Find the path from root to the minimum node
+void pathToMinNode(struct Node* root) {
+    if (root == NULL)
+        return;
+
+    while (root->left != NULL) {
+        printf("%s\n", root->name);
+        root = root->left;
+    }
+    printf("%s\n", root->name);
+}
+
+int main() {
+    int n;
+    scanf("%d", &n);
+
+    float player_lat, player_lon;
+    scanf("%f %f", &player_lat, &player_lon);
+
+    struct Node* root = NULL;
+    for (int i = 0; i < n; ++i) {
+        char name[50];
+        float lat, lon;
+        scanf("%s %f %f", name, &lat, &lon);
+        float distance = haversine(player_lat, player_lon, lat, lon);
+        root = insertNode(root, name, distance);
+    }
+
+    printf("DFS:\n");
+    dfs(root);
+
+    printf("\nBFS:\n");
+    bfs(root);
+
+    printf("\nPath from Root to Minimum Node:\n");
+    pathToMinNode(root);
+
+    struct Node* current = root;
+    while (current->left != NULL)
+        current = current->left;
+
+    printf("\nNearest Treasure Found:\n%s (Distance: %.1f)\n", current->name, current->distance);
+
+    return 0;
+}
